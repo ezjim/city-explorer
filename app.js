@@ -1,7 +1,8 @@
 const express = require('express');
 const data = require('./geo.js');
 const app = express();
-const request = require('superagent');
+const weather = require('./darksky.js');
+// const request = require('superagent');
 
 let lat;
 let lng;
@@ -19,17 +20,23 @@ app.get('/location', (request, respond) => {
     });
 });
 
+
 const getWeatherData = (lat, lng) => {
-    return getWeatherData.daily.map(forcast => {
+    return weather.daily.data.map(forecast => {
         return {
-            forcast: forcast.summary,
-            time: new Date(forcast.time),
-        }
+            forecast: forecast.summary,
+            time: new Date(forecast.time * 1000),
+        };
     })
-}
-// app.get('/weather', (req, res) ) => {
-//     const portlandWeatherv = getweatherdata(lat, lng)
-// }
+} ;
+app.get('/weather', (req, res) => {
+    // use the lat and lng from earlier to get weather data for the selected area
+    const portlandWeather = getWeatherData(lat, lng);
+    
+    // res.json that weather data in the appropriate form
+    res.json(portlandWeather);
+});
+
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
@@ -37,3 +44,6 @@ console.log(data);
 
 
 
+module.exports = {
+    app: app,
+};
