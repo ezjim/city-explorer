@@ -3,23 +3,37 @@ const data = require('./geo.js');
 const app = express();
 const weather = require('./darksky.js');
 // const request = require('superagent');
+app.use(cors());
 
-let lat;
-let lng;
+app.get('/', (request, respond) => respond.send('Jello World!'));
 
-app.get('/location', (request, respond) => {
-    const cityData = data.results[0];
+let lat = 45.5234211;
+let lng = -122.6809008;
 
-    lat = cityData.geometry.location.lat,
-    lng = cityData.geometry.location.lng,
+app.get('/location', async(req, res, next) => {
+    try {
+        // ins www.cool-api.com?search=portland, `location` will be portland
+        const location = req.query.search;
+        // TODO: HIDE KEY
+        const URL = `https://us1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${location}&format=json`;
 
-    respond.json({
-        formatted_query: cityData.formatted_address,
-        latitude: cityData.geometry.location.lat,
-        longitude: cityData.geometry.location.lat,
-    });
+        const cityData = await request.get(URL);     
+
+        const firstResult = cityData.body[0];
+
+        // update the global state of lat and lng so it is accessbile in other routes
+        lat = firstResult.lat;
+        lng = firstResult.lon;
+        
+        res.json({
+            formatted_query: firstResult.display_name,
+            latitude: lat,
+            longitude: lng, 
+        });
+    } catch (err) {
+        next(err);
+    }
 });
-
 
 const getWeatherData = (lat, lng) => {
     return weather.daily.data.map(forecast => {
@@ -37,12 +51,7 @@ app.get('/weather', (req, res) => {
     res.json(portlandWeather);
 });
 
-
-const port = process.env.PORT || 5000;
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
-console.log(data);
-
-
+app.get('*', (req, res) => res.send('404!!!!!!'))
 
 module.exports = {
     app: app,
