@@ -2,13 +2,26 @@ const express = require('express');
 const data = require('./geo.js');
 const app = express();
 const weather = require('./darksky.js');
-// const request = require('superagent');
+const request = require('superagent');
+const cors = require('cors');
+
+app.use(cors());
+app.get('/', (request, respond) => respond.send('Jello World!'));
+
 
 let lat;
 let lng;
 
-app.get('/location', (request, respond) => {
-    const cityData = data.results[0];
+app.get('/location', async(req, res, next) => {
+    try {
+        
+        const location = req.query.search;
+        const URL = `https://us1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${location}&format=json`;
+
+        const cityData = await request.get(URL);     
+        const firstResult = cityData.body[0];
+
+        
 
     lat = cityData.geometry.location.lat,
     lng = cityData.geometry.location.lng,
@@ -18,6 +31,9 @@ app.get('/location', (request, respond) => {
         latitude: cityData.geometry.location.lat,
         longitude: cityData.geometry.location.lat,
     });
+} catch (err) {
+    next(err);
+}
 });
 
 
